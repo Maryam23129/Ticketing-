@@ -62,7 +62,8 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     st.write(f"📈 Jumlah Tiket B2B: {jumlah_tiket_b2b}")
     st.write(f"💵 Pendapatan B2B: Rp {pendapatan_b2b:,.0f}")
     invoice_df = load_excel(uploaded_invoice)
-    total_invoice_dibayar = extract_total_invoice(invoi
+    total_invoice_dibayar = extract_total_invoice(invoice_df)
+    st.write(f"🧾 Total Invoice Dibayar: Rp {total_invoice_dibayar:,.0f}")
     summary_df = load_excel(uploaded_summary)
     rekening_df = load_excel(uploaded_rekening)
 
