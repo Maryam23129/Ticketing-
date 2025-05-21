@@ -157,13 +157,14 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     for col in ["Nominal Tiket Terjual", "Invoice", "Uang Masuk", "Selisih"]:
         formatted_df[col] = formatted_df[col].apply(lambda x: f"Rp {x:,.0f}" if isinstance(x, (int, float)) and x != 0 else "")
 
-    df_pelabuhan = formatted_df[formatted_df["Pelabuhan Asal"] != "TOTAL"]
+    st.success("✅ Rekonsiliasi selesai! Tabel hasil berhasil dibuat.")
+    df_pelabuhan = formatted_df[formatted_df["Pelabuhan Asal"] != "TOTAL"].drop(columns=["Uang Masuk"])
     df_total = formatted_df[formatted_df["Pelabuhan Asal"] == "TOTAL"].drop(columns=["Pelabuhan Asal"])
 
     st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
     st.dataframe(df_pelabuhan, use_container_width=True)
 
-    st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Invoice dan Bank")
+    st.subheader("📄 Tabel Rekapitulasi Total Keseluruhan")
     st.dataframe(df_total, use_container_width=True)
 
     output_excel = to_excel(df)
