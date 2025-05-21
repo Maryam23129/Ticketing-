@@ -63,6 +63,13 @@ uploaded_files = st.sidebar.file_uploader("📁 Upload Semua File Sekaligus", ty
 if st.sidebar.button("➕ Tambah File Lagi"):
     st.sidebar.file_uploader("📁 Upload Tambahan", type=["xlsx"], accept_multiple_files=True, key="extra_upload")
 
+# Tombol reset upload file
+if st.sidebar.button("🔄 Reset File Upload"):
+    for key in ["main_upload", "extra_upload"]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.experimental_rerun()
+
 uploaded_tiket = uploaded_invoice = uploaded_summary = uploaded_rekening = None
 all_files = uploaded_files + st.session_state.get("extra_upload", []) if uploaded_files else st.session_state.get("extra_upload", [])
 
