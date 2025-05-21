@@ -105,12 +105,10 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     st.dataframe(rekening_detail_df[['Remark', 'KataPertama', 'TanggalKode', 'Tanggal Transaksi']].head(10))
     st.write(f"📆 Rentang invoice: {tanggal_awal.strftime('%d-%m-%Y')} s.d {tanggal_akhir.strftime('%d-%m-%Y')}")
 
-    filtered_rekening = rekening_detail_df[
-        (rekening_detail_df['Tanggal Transaksi'] >= tanggal_awal) &
-        (rekening_detail_df['Tanggal Transaksi'] <= tanggal_akhir)
+    filtered_rekening = rekening_detail_df.copy()
     ]
 
-    st.write("✅ Transaksi MIDI sesuai rentang invoice:")
+    st.write("✅ Semua Transaksi MIDI UTAMA (tanpa filter tanggal):")
     st.dataframe(filtered_rekening[['Tanggal Transaksi', 'Credit', 'Remark']])
     total_rekening_midi = filtered_rekening['Credit'].sum()
 
