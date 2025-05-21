@@ -65,6 +65,8 @@ uploaded_invoice = uploaded_summary = uploaded_rekening = None
 all_files = uploaded_files + st.session_state.get("extra_upload", []) if uploaded_files else st.session_state.get("extra_upload", [])
 
 if all_files:
+    st.write("📂 Semua file terdeteksi:", [file.name for file in all_files])
+
     for file in all_files:
         fname = file.name.lower()
         if "tiket" in fname:
@@ -75,6 +77,8 @@ if all_files:
             uploaded_summary = file
         elif "rekening" in fname or "acc_statement" in fname:
             uploaded_rekening = file
+
+    st.write("✅ Tiket terdeteksi:", [file.name for file in uploaded_tiket_files])
 
 if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_rekening:
     st.success("Semua file berhasil diupload. Memproses rekapitulasi...")
