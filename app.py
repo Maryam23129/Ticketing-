@@ -15,14 +15,6 @@ def extract_total_invoice(invoice_df):
     filtered = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar']
     return filtered['HARGA'].sum()
 
-def extract_total_b2b(df):
-    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \\(B2B\\)", regex=True).any(), axis=1)]
-    if not row.empty:
-        jumlah_tiket = pd.to_numeric(row.iloc[0, 3], errors='coerce')
-        pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
-        return jumlah_tiket, pendapatan, None
-    return None, None, None
-
 def extract_total_rekening(rekening_df):
     rekening_df = rekening_df.iloc[12:, [1, 2, 5]].dropna()
     rekening_df.columns = ['Tanggal', 'Remark', 'Credit']
@@ -58,26 +50,25 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.sidebar.title("Upload File")
-uploaded_files = st.sidebar.file_uploader("📁 Upload Semua File Sekaligus", type=["xlsx"], accept_multiple_files=True, key="main_upload")
-
-if st.sidebar.button("➕ Tambah File Lagi"):
-    st.sidebar.file_uploader("📁 Upload Tambahan", type=["xlsx"], accept_multiple_files=True, key="extra_upload")
-
-# Tombol reset upload file
 if st.sidebar.button("🔄 Reset File Upload"):
     for key in ["main_upload", "extra_upload"]:
         if key in st.session_state:
             del st.session_state[key]
     st.experimental_rerun()
 
-uploaded_tiket = uploaded_invoice = uploaded_summary = uploaded_rekening = None
+uploaded_files = st.sidebar.file_uploader("📁 Upload Semua File Sekaligus", type=["xlsx"], accept_multiple_files=True, key="main_upload")
+if st.sidebar.button("➕ Tambah File Lagi"):
+    st.sidebar.file_uploader("📁 Upload Tambahan", type=["xlsx"], accept_multiple_files=True, key="extra_upload")
+
+uploaded_tiket_files = []
+uploaded_invoice = uploaded_summary = uploaded_rekening = None
 all_files = uploaded_files + st.session_state.get("extra_upload", []) if uploaded_files else st.session_state.get("extra_upload", [])
 
 if all_files:
     for file in all_files:
         fname = file.name.lower()
         if "tiket" in fname:
-            uploaded_tiket = file
+            uploaded_tiket_files.append(file)
         elif "invoice" in fname:
             uploaded_invoice = file
         elif "summary" in fname:
@@ -85,11 +76,17 @@ if all_files:
         elif "rekening" in fname or "acc_statement" in fname:
             uploaded_rekening = file
 
-if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekening:
+if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_rekening:
     st.success("Semua file berhasil diupload. Memproses rekapitulasi...")
 
-    tiket_df = load_excel(uploaded_tiket)
-    jumlah_tiket_b2b, pendapatan_b2b, _ = extract_total_b2b(tiket_df)
+    b2b_list = []
+    for tiket_file in uploaded_tiket_files:
+        df_tiket = load_excel(tiket_file)
+        row = df_tiket[df_tiket.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \\(B2B\\)", regex=True).any(), axis=1)]
+        if not row.empty:
+            pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
+            pelabuhan = next((p.capitalize() for p in ["merak", "bakauheni", "ketapang", "gilimanuk", "ciwandan", "panjang"] if p in tiket_file.name.lower()), "Tidak diketahui")
+            b2b_list.append({"Pelabuhan": pelabuhan, "Pendapatan": pendapatan})
 
     invoice_df = load_excel(uploaded_invoice)
     total_invoice_dibayar = extract_total_invoice(invoice_df)
@@ -106,26 +103,17 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
 
     rekening_df = load_excel(uploaded_rekening)
     rekening_detail_df = extract_total_rekening(rekening_df)
-
-    # Filter rekening sesuai tanggal invoice
-    if 's.d' in tanggal_transaksi:
-        tgl_awal_str, tgl_akhir_str = tanggal_transaksi.split(' s.d ')
-        tgl_awal = pd.to_datetime(tgl_awal_str, dayfirst=True)
-        tgl_akhir = pd.to_datetime(tgl_akhir_str, dayfirst=True)
-        filtered_rekening = rekening_detail_df[
-            (rekening_detail_df['Tanggal Transaksi'] >= tgl_awal) &
-            (rekening_detail_df['Tanggal Transaksi'] <= tgl_akhir)
-        ]
-        total_rekening_midi = filtered_rekening['Credit'].sum()
-    else:
-        total_rekening_midi = rekening_detail_df['Credit'].sum()
+    total_rekening_midi = rekening_detail_df['Credit'].sum()
 
     pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
     df = pd.DataFrame({
         "No": list(range(1, len(pelabuhan_list) + 1)),
         "Tanggal Transaksi": [tanggal_transaksi] * len(pelabuhan_list),
         "Pelabuhan Asal": pelabuhan_list,
-        "Nominal Tiket Terjual": [pendapatan_b2b] + [0] * (len(pelabuhan_list) - 1),
+        "Nominal Tiket Terjual": [
+            next((b['Pendapatan'] for b in b2b_list if b['Pelabuhan'].lower() == pel.lower()), 0)
+            for pel in pelabuhan_list
+        ],
         "Invoice": [total_invoice_dibayar] + [0] * (len(pelabuhan_list) - 1),
         "Uang Masuk": [total_rekening_midi] + [0] * (len(pelabuhan_list) - 1),
         "Selisih": [total_invoice_dibayar - total_rekening_midi] + [0] * (len(pelabuhan_list) - 1)
