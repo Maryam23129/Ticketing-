@@ -16,16 +16,12 @@ def extract_total_invoice(invoice_df):
     return filtered['HARGA'].sum()
 
 def extract_total_b2b(df):
-    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \\(B2B\\)", regex=True).any(), axis=1)]
+    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \(B2B\)", regex=True).any(), axis=1)]
     if not row.empty:
         jumlah_tiket = pd.to_numeric(row.iloc[0, 3], errors='coerce')
         pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
-        tanggal = df[df.apply(lambda r: r.astype(str).str.contains("TANGGAL", regex=True).any(), axis=1)]
-        if not tanggal.empty:
-            tanggal_str = tanggal.iloc[0, 4]
-        else:
-            tanggal_str = None
-        return jumlah_tiket, pendapatan, tanggal_str
+        tanggal = row.iloc[0, 4] if 'TANGGAL' in df.columns else None
+        return jumlah_tiket, pendapatan, tanggal
     return None, None, None
 
 def extract_total_rekening(rekening_df):
@@ -46,7 +42,6 @@ def to_excel(df):
     output.seek(0)
     return output
 
-# Streamlit Layout
 st.set_page_config(page_title="Dashboard Rekonsiliasi Pendapatan Ticketing", layout="wide")
 
 st.markdown("""
@@ -71,7 +66,7 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     total_invoice_dibayar = extract_total_invoice(invoice_df)
 
     summary_df = load_excel(uploaded_summary)
-    _ = extract_total_summary(summary_df)
+    _ = extract_total_summary(summary_df)  # Tidak digunakan di output akhir saat ini
 
     rekening_df = load_excel(uploaded_rekening)
     rekening_detail_df, total_rekening_midi = extract_total_rekening(rekening_df)
@@ -89,6 +84,7 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     })
 
     st.subheader("📄 Tabel Rekapitulasi Hasil Rekonsiliasi")
+    tabel_template[['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih']] = tabel_template[['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih']].applymap(lambda x: f"Rp {x:,.0f}" if x else "")
     st.dataframe(tabel_template, use_container_width=True)
 
     output_excel = to_excel(tabel_template)
@@ -98,6 +94,5 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
         file_name="rekapitulasi_rekonsiliasi.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
 else:
     st.info("Silakan upload semua file yang dibutuhkan untuk menampilkan tabel hasil rekonsiliasi.")
