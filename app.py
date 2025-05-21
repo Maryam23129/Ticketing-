@@ -140,6 +140,14 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     st.subheader("📄 Tabel Rekapitulasi Hasil Rekonsiliasi")
     st.dataframe(formatted_df, use_container_width=True)
 
+    output_excel = to_excel(df)
+    st.download_button(
+        label="📥 Download Rekapitulasi",
+        data=output_excel,
+        file_name="rekapitulasi_rekonsiliasi.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
     if all_files:
         st.markdown("### 📂 Semua file terdeteksi")
         st.write([file.name for file in all_files])
@@ -148,11 +156,6 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
         st.write([file.name for file in uploaded_tiket_files])
 
     output_excel = to_excel(df)
-    st.download_button(
-        label="📥 Download Rekapitulasi",
-        data=output_excel,
-        file_name="rekapitulasi_rekonsiliasi.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    
 else:
     st.info("Silakan upload semua file yang dibutuhkan untuk menampilkan tabel hasil rekonsiliasi.")
