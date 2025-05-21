@@ -92,8 +92,9 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     })
 
     st.subheader("📄 Tabel Rekapitulasi Hasil Rekonsiliasi")
-    tabel_template[['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih']] = tabel_template[['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih']].applymap(lambda x: f"Rp {x:,.0f}" if x else "")
-    st.dataframe(tabel_template, use_container_width=True)
+    formatted_template = tabel_template.copy()
+    formatted_template[['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih']] = formatted_template[['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih']].applymap(lambda x: f"Rp {x:,.0f}" if x else "")
+    st.dataframe(formatted_template, use_container_width=True)
 
     output_excel = to_excel(tabel_template)
     st.download_button(
