@@ -5,6 +5,14 @@ from io import BytesIO
 def load_excel(file):
     return pd.read_excel(file)
 
+def extract_total_b2b(df):
+    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \(B2B\)", regex=True).any(), axis=1)]
+    if not row.empty:
+        jumlah_tiket = pd.to_numeric(row.iloc[0, 3], errors='coerce')
+        pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
+        return jumlah_tiket, pendapatan
+    return None, None
+
 def rekonsiliasi(tiket_terjual, invoice, summary, rekening):
     # Contoh logika dasar rekonsiliasi: gabungkan dan bandingkan berdasarkan kolom 'Nomor Tiket' atau 'Nomor Invoice'
     result = pd.merge(tiket_terjual, invoice, on='Nomor Invoice', how='outer', suffixes=('_tiket', '_invoice'))
@@ -24,7 +32,7 @@ st.set_page_config(page_title="Dashboard Rekonsiliasi Pendapatan Ticketing", lay
 
 # Header dengan ikon
 st.markdown("""
-    <h1 style='text-align: center;'> Dashboard Rekonsiliasi Pendapatan Ticketing 📊🚢</h1>
+    <h1 style='text-align: center;'>📊 Dashboard Rekonsiliasi Pendapatan Ticketing 🚢💰</h1>
     <p style='text-align: center; font-size: 18px;'>Aplikasi ini digunakan untuk membandingkan data tiket terjual, invoice, ringkasan tiket, dan pemasukan dari rekening koran guna memastikan kesesuaian pendapatan.</p>
 """, unsafe_allow_html=True)
 
@@ -38,6 +46,9 @@ uploaded_rekening = st.sidebar.file_uploader("📁 Upload Rekening Koran", type=
 if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekening:
     st.success("Semua file berhasil diupload. Memproses rekonsiliasi...")
     tiket_df = load_excel(uploaded_tiket)
+    jumlah_tiket_b2b, pendapatan_b2b = extract_total_b2b(tiket_df)
+    st.write(f"📈 Jumlah Tiket B2B: {jumlah_tiket_b2b}")
+    st.write(f"💵 Pendapatan B2B: Rp {pendapatan_b2b:,.0f}")
     invoice_df = load_excel(uploaded_invoice)
     summary_df = load_excel(uploaded_summary)
     rekening_df = load_excel(uploaded_rekening)
