@@ -28,10 +28,18 @@ def extract_total_rekening(rekening_df):
     rekening_df.columns = ['Tanggal', 'Remark', 'Credit']
     rekening_df = rekening_df[rekening_df['Remark'].str.contains("DARI MIDI UTAMA INDONESIA", case=False, na=False)]
     rekening_df['Credit'] = rekening_df['Credit'].replace('[^0-9.]', '', regex=True).astype(float)
+
+    # Ambil 4 digit terakhir dari kata pertama di kolom Remark
     rekening_df['TanggalKode'] = rekening_df['Remark'].str.extract(r'^(\S+)')[0].str[-4:]
     rekening_df['Bulan'] = rekening_df['TanggalKode'].str[:2]
     rekening_df['Tanggal'] = rekening_df['TanggalKode'].str[2:]
-    rekening_df['Tanggal Transaksi'] = pd.to_datetime('2025' + rekening_df['Bulan'] + rekening_df['Tanggal'], format='%Y%m%d', errors='coerce')
+
+    # Konversi ke format tanggal
+    rekening_df['Tanggal Transaksi'] = pd.to_datetime(
+        '2025' + rekening_df['Bulan'] + rekening_df['Tanggal'],
+        format='%Y%m%d',
+        errors='coerce'
+    )
     return rekening_df
 
 def to_excel(df):
