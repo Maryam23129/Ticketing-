@@ -5,6 +5,12 @@ from io import BytesIO
 def load_excel(file):
     return pd.read_excel(file)
 
+def extract_total_summary(summary_df):
+    summary_df["CETAK BOARDING PASS"] = pd.to_datetime(summary_df["CETAK BOARDING PASS"], errors='coerce')
+    summary_df = summary_df[~summary_df["CETAK BOARDING PASS"].isna()]
+    summary_df["TARIF"] = pd.to_numeric(summary_df["TARIF"], errors='coerce')
+    return summary_df["TARIF"].sum()
+
 def extract_total_invoice(invoice_df):
     filtered = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar']
     return filtered['HARGA'].sum()
@@ -27,7 +33,17 @@ def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pen
     if pendapatan_b2b is not None:
         result['Validasi Pendapatan'] = result['Jumlah_invoice'] == pendapatan_b2b
 
-        if total_invoice_dibayar is not No and row.get('Validasi Pendapatan', True) and row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit'] else 'Tidak Cocok', axis=1
+        if total_invoice_dibayar is not None:
+        result['Validasi Invoice Dibayar'] = result['Jumlah_invoice'] == total_invoice_dibayar
+
+    result['Status Rekonsiliasi'] = result.apply(
+        lambda row: 'Cocok' if all([
+            row.get('Validasi Jumlah Tiket', True),
+            row.get('Validasi Pendapatan', True),
+            row.get('Validasi Invoice Dibayar', True),
+            row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit']
+        ]) else 'Tidak Cocok', axis=1
+    ) and row.get('Validasi Pendapatan', True) and row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit'] else 'Tidak Cocok', axis=1
     )
 
     return result
@@ -64,9 +80,11 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     total_invoice_dibayar = extract_total_invoice(invoice_df)
     st.write(f"🧾 Total Invoice Dibayar: Rp {total_invoice_dibayar:,.0f}")
     summary_df = load_excel(uploaded_summary)
+    total_summary_tarif = extract_total_summary(summary_df)
+    st.write(f"🧾 Total Tarif dari Ticket Summary: Rp {total_summary_tarif:,.0f}")
     rekening_df = load_excel(uploaded_rekening)
 
-    hasil_rekonsiliasi = rekonsiliasi(tiket_df, invoice_df, summary_df, rekening_df, jumlah_tiket_b2b, pendapatan_b2b)
+    hasil_rekonsiliasi = rekonsiliasi(tiket_df, invoice_df, summary_df, rekening_df, jumlah_tiket_b2b, pendapatan_b2b, total_invoice_dibayar)
 
     st.subheader("Hasil Rekonsiliasi")
     st.dataframe(hasil_rekonsiliasi)
