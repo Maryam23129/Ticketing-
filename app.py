@@ -16,7 +16,7 @@ def extract_total_invoice(invoice_df):
     return filtered['HARGA'].sum()
 
 def extract_total_b2b(df):
-    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \(B2B\)", regex=True).any(), axis=1)]
+    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \\(B2B\\)", regex=True).any(), axis=1)]
     if not row.empty:
         jumlah_tiket = pd.to_numeric(row.iloc[0, 3], errors='coerce')
         pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
@@ -32,7 +32,7 @@ def extract_total_rekening(rekening_df):
     rekening_df['Bulan'] = rekening_df['TanggalKode'].str[:2]
     rekening_df['Tanggal'] = rekening_df['TanggalKode'].str[2:]
     rekening_df['Tanggal Transaksi'] = pd.to_datetime('2025' + rekening_df['Bulan'] + rekening_df['Tanggal'], format='%Y%m%d', errors='coerce')
-    return rekening_df, rekening_df['Credit'].sum()
+    return rekening_df
 
 def to_excel(df):
     output = BytesIO()
@@ -44,15 +44,12 @@ def to_excel(df):
         for col_num, column in enumerate(df.columns):
             fmt = currency_format if column in ['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih'] else None
             worksheet.set_column(col_num, col_num, 20, fmt)
-
-        # Tambahkan border
         border_format = workbook.add_format({'border': 1})
         worksheet.conditional_format(0, 0, len(df), len(df.columns) - 1, {'type': 'no_blanks', 'format': border_format})
         worksheet.conditional_format(0, 0, len(df), len(df.columns) - 1, {'type': 'blanks', 'format': border_format})
     output.seek(0)
     return output
 
-# Streamlit App
 st.set_page_config(page_title="Dashboard Rekonsiliasi Pendapatan Ticketing", layout="wide")
 
 st.markdown("""
@@ -101,10 +98,22 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     _ = extract_total_summary(summary_df)
 
     rekening_df = load_excel(uploaded_rekening)
-    rekening_detail_df, total_rekening_midi = extract_total_rekening(rekening_df)
+    rekening_detail_df = extract_total_rekening(rekening_df)
+
+    # Filter rekening sesuai tanggal invoice
+    if 's.d' in tanggal_transaksi:
+        tgl_awal_str, tgl_akhir_str = tanggal_transaksi.split(' s.d ')
+        tgl_awal = pd.to_datetime(tgl_awal_str, dayfirst=True)
+        tgl_akhir = pd.to_datetime(tgl_akhir_str, dayfirst=True)
+        filtered_rekening = rekening_detail_df[
+            (rekening_detail_df['Tanggal Transaksi'] >= tgl_awal) &
+            (rekening_detail_df['Tanggal Transaksi'] <= tgl_akhir)
+        ]
+        total_rekening_midi = filtered_rekening['Credit'].sum()
+    else:
+        total_rekening_midi = rekening_detail_df['Credit'].sum()
 
     pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
-
     df = pd.DataFrame({
         "No": list(range(1, len(pelabuhan_list) + 1)),
         "Tanggal Transaksi": [tanggal_transaksi] * len(pelabuhan_list),
