@@ -20,9 +20,8 @@ def extract_total_b2b(df):
     if not row.empty:
         jumlah_tiket = pd.to_numeric(row.iloc[0, 3], errors='coerce')
         pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
-        tanggal = df.iloc[4, 4]  # Ambil dari baris ke-5 kolom ke-5 sesuai struktur file
+        tanggal = df.iloc[4, 4]  # Cell E5
         return jumlah_tiket, pendapatan, tanggal
-    return None, None, None
     return None, None, None
 
 def extract_total_rekening(rekening_df):
@@ -40,7 +39,7 @@ def to_excel(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Rekapitulasi')
-        workbook  = writer.book
+        workbook = writer.book
         worksheet = writer.sheets['Rekapitulasi']
         currency_format = workbook.add_format({'num_format': '"Rp" #,##0'})
         for col_num, column in enumerate(df.columns):
@@ -51,6 +50,7 @@ def to_excel(df):
     output.seek(0)
     return output
 
+# Streamlit Layout
 st.set_page_config(page_title="Dashboard Rekonsiliasi Pendapatan Ticketing", layout="wide")
 
 st.markdown("""
@@ -59,15 +59,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.sidebar.title("Upload File")
-
 uploaded_files = st.sidebar.file_uploader("📁 Upload Semua File Sekaligus", type=["xlsx"], accept_multiple_files=True, key="main_upload")
 
-# Tombol tambahan file
 if st.sidebar.button("➕ Tambah File Lagi"):
     st.sidebar.file_uploader("📁 Upload Tambahan", type=["xlsx"], accept_multiple_files=True, key="extra_upload")
 
 uploaded_tiket = uploaded_invoice = uploaded_summary = uploaded_rekening = None
-
 all_files = uploaded_files + st.session_state.get("extra_upload", []) if uploaded_files else st.session_state.get("extra_upload", [])
 
 if all_files:
@@ -92,14 +89,14 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     total_invoice_dibayar = extract_total_invoice(invoice_df)
 
     summary_df = load_excel(uploaded_summary)
-    _ = extract_total_summary(summary_df)  # Tidak digunakan di output akhir saat ini
+    _ = extract_total_summary(summary_df)
 
     rekening_df = load_excel(uploaded_rekening)
     rekening_detail_df, total_rekening_midi = extract_total_rekening(rekening_df)
 
     pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
 
-    tabel_template = pd.DataFrame({
+    data = {
         "No": list(range(1, len(pelabuhan_list) + 1)),
         "Tanggal Transaksi": [tanggal_transaksi] * len(pelabuhan_list),
         "Pelabuhan Asal": pelabuhan_list,
@@ -107,19 +104,34 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
         "Invoice": [total_invoice_dibayar] + [0] * (len(pelabuhan_list) - 1),
         "Uang Masuk": [total_rekening_midi] + [0] * (len(pelabuhan_list) - 1),
         "Selisih": [total_invoice_dibayar - total_rekening_midi] + [0] * (len(pelabuhan_list) - 1)
-    })
+    }
+
+    df = pd.DataFrame(data)
+    total_row = {
+        "No": "",
+        "Tanggal Transaksi": "",
+        "Pelabuhan Asal": "TOTAL",
+        "Nominal Tiket Terjual": df["Nominal Tiket Terjual"].sum(),
+        "Invoice": df["Invoice"].sum(),
+        "Uang Masuk": df["Uang Masuk"].sum(),
+        "Selisih": df["Selisih"].sum()
+    }
+    df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
+
+    formatted_df = df.copy()
+    for kolom in ["Nominal Tiket Terjual", "Invoice", "Uang Masuk", "Selisih"]:
+        formatted_df[kolom] = formatted_df[kolom].apply(lambda x: f"Rp {x:,.0f}" if isinstance(x, (int, float)) and x != 0 else "")
 
     st.subheader("📄 Tabel Rekapitulasi Hasil Rekonsiliasi")
-    formatted_template = tabel_template.copy()
-    formatted_template[['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih']] = formatted_template[['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih']].applymap(lambda x: f"Rp {x:,.0f}" if x else "")
-    st.dataframe(formatted_template, use_container_width=True)
+    st.dataframe(formatted_df, use_container_width=True)
 
-    output_excel = to_excel(tabel_template)
+    output_excel = to_excel(df)
     st.download_button(
         label="📥 Download Rekapitulasi",
         data=output_excel,
         file_name="rekapitulasi_rekonsiliasi.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 else:
     st.info("Silakan upload semua file yang dibutuhkan untuk menampilkan tabel hasil rekonsiliasi.")
