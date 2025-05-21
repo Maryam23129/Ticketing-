@@ -59,7 +59,11 @@ st.markdown("""
 
 st.sidebar.title("Upload File")
 
-uploaded_files = st.sidebar.file_uploader("📁 Upload Semua File Sekaligus", type=["xlsx"], accept_multiple_files=True)
+uploaded_files = st.sidebar.file_uploader("📁 Upload Semua File Sekaligus", type=["xlsx"], accept_multiple_files=True, key="main_upload")
+
+# Tombol tambahan file
+if st.sidebar.button("➕ Tambah File Lagi"):
+    st.sidebar.file_uploader("📁 Upload Tambahan", type=["xlsx"], accept_multiple_files=True, key="extra_upload")
 
 uploaded_tiket = uploaded_invoice = uploaded_summary = uploaded_rekening = None
 
