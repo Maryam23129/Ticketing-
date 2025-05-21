@@ -16,7 +16,7 @@ def extract_total_invoice(invoice_df):
     return filtered['HARGA'].sum(), pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').min(), pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').max()
 
 def extract_total_b2b(df):
-    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \\(B2B\\)", regex=True).any(), axis=1)]
+    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \(B2B\)", regex=True).any(), axis=1)]
     if not row.empty:
         jumlah_tiket = pd.to_numeric(row.iloc[0, 3], errors='coerce')
         pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
