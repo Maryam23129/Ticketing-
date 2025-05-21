@@ -5,23 +5,23 @@ from io import BytesIO
 def load_excel(file):
     return pd.read_excel(file)
 
-def extract_total_summary(summary_df):
-    summary_df["CETAK BOARDING PASS"] = pd.to_datetime(summary_df["CETAK BOARDING PASS"], errors='coerce')
-    summary_df = summary_df[~summary_df["CETAK BOARDING PASS"].isna()]
-    summary_df["TARIF"] = pd.to_numeric(summary_df["TARIF"], errors='coerce')
-    return summary_df["TARIF"].sum()
-
 def extract_total_invoice(invoice_df):
     filtered = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar']
     return filtered['HARGA'].sum(), pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').min(), pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').max()
 
 def extract_total_b2b(df):
-    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \(B2B\)", regex=True).any(), axis=1)]
+    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \\(B2B\\)", regex=True).any(), axis=1)]
     if not row.empty:
         jumlah_tiket = pd.to_numeric(row.iloc[0, 3], errors='coerce')
         pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
         return jumlah_tiket, pendapatan, None
     return None, None, None
+
+def extract_total_summary(summary_df):
+    summary_df["CETAK BOARDING PASS"] = pd.to_datetime(summary_df["CETAK BOARDING PASS"], errors='coerce')
+    summary_df = summary_df[~summary_df["CETAK BOARDING PASS"].isna()]
+    summary_df["TARIF"] = pd.to_numeric(summary_df["TARIF"], errors='coerce')
+    return summary_df["TARIF"].sum()
 
 def extract_total_rekening(rekening_df):
     rekening_df = rekening_df.iloc[12:, [1, 2, 5]].dropna()
@@ -55,6 +55,7 @@ def to_excel(df):
     output.seek(0)
     return output
 
+# Streamlit layout
 st.set_page_config(page_title="Dashboard Rekonsiliasi Pendapatan Ticketing", layout="wide")
 
 st.markdown("""
@@ -99,10 +100,18 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     rekening_df = load_excel(uploaded_rekening)
     rekening_detail_df = extract_total_rekening(rekening_df)
 
+    # 🔍 DEBUG
+    st.write("🔍 Parsing Remark → Tanggal:")
+    st.dataframe(rekening_detail_df[['Remark', 'KataPertama', 'TanggalKode', 'Tanggal Transaksi']].head(10))
+    st.write(f"📆 Rentang invoice: {tanggal_awal.strftime('%d-%m-%Y')} s.d {tanggal_akhir.strftime('%d-%m-%Y')}")
+
     filtered_rekening = rekening_detail_df[
         (rekening_detail_df['Tanggal Transaksi'] >= tanggal_awal) &
         (rekening_detail_df['Tanggal Transaksi'] <= tanggal_akhir)
     ]
+
+    st.write("✅ Transaksi MIDI sesuai rentang invoice:")
+    st.dataframe(filtered_rekening[['Tanggal Transaksi', 'Credit', 'Remark']])
     total_rekening_midi = filtered_rekening['Credit'].sum()
 
     pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
