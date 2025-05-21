@@ -16,12 +16,16 @@ def extract_total_invoice(invoice_df):
     return filtered['HARGA'].sum()
 
 def extract_total_b2b(df):
-    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \(B2B\)", regex=True).any(), axis=1)]
+    row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \\(B2B\\)", regex=True).any(), axis=1)]
     if not row.empty:
         jumlah_tiket = pd.to_numeric(row.iloc[0, 3], errors='coerce')
         pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
-        tanggal = row.iloc[0, 4] if 'TANGGAL' in df.columns else None
-        return jumlah_tiket, pendapatan, tanggal
+        tanggal = df[df.apply(lambda r: r.astype(str).str.contains("TANGGAL", regex=True).any(), axis=1)]
+        if not tanggal.empty:
+            tanggal_str = tanggal.iloc[0, 4]
+        else:
+            tanggal_str = None
+        return jumlah_tiket, pendapatan, tanggal_str
     return None, None, None
 
 def extract_total_rekening(rekening_df):
@@ -42,6 +46,7 @@ def to_excel(df):
     output.seek(0)
     return output
 
+# Streamlit Layout
 st.set_page_config(page_title="Dashboard Rekonsiliasi Pendapatan Ticketing", layout="wide")
 
 st.markdown("""
@@ -66,7 +71,7 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     total_invoice_dibayar = extract_total_invoice(invoice_df)
 
     summary_df = load_excel(uploaded_summary)
-    _ = extract_total_summary(summary_df)  # Tidak digunakan di output akhir saat ini
+    _ = extract_total_summary(summary_df)
 
     rekening_df = load_excel(uploaded_rekening)
     rekening_detail_df, total_rekening_midi = extract_total_rekening(rekening_df)
@@ -93,5 +98,6 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
         file_name="rekapitulasi_rekonsiliasi.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 else:
     st.info("Silakan upload semua file yang dibutuhkan untuk menampilkan tabel hasil rekonsiliasi.")
