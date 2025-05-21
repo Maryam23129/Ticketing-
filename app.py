@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
+import re
 
 def load_excel(file):
     return pd.read_excel(file)
@@ -95,10 +96,11 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     invoice_df = load_excel(uploaded_invoice)
     total_invoice_dibayar = extract_total_invoice(invoice_df)
 
-    if 'TANGGAL INVOICE' in invoice_df.columns:
-        tanggal_awal = pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').min()
-        tanggal_akhir = pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').max()
-        tanggal_transaksi = f"{tanggal_awal.strftime('%d-%m-%Y')} s.d {tanggal_akhir.strftime('%d-%m-%Y')}"
+    # Ambil tanggal dari nama file invoice jika tersedia
+    match = re.search(r'(\d{4}-\d{2}-\d{2})\s*s[\-_]d\s*(\d{4}-\d{2}-\d{2})', uploaded_invoice.name)
+    if match:
+        tanggal_awal_str, tanggal_akhir_str = match.groups()
+        tanggal_transaksi = f"{pd.to_datetime(tanggal_awal_str).strftime('%d-%m-%Y')} s.d {pd.to_datetime(tanggal_akhir_str).strftime('%d-%m-%Y')}"
     else:
         tanggal_transaksi = "Tanggal tidak tersedia"
 
