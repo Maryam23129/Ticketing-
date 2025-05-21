@@ -104,6 +104,9 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     else:
         tanggal_transaksi = "Tanggal tidak tersedia"
 
+    st.write("🧪 Nama file invoice:", uploaded_invoice.name)
+    st.write("🧪 Tanggal Transaksi hasil parsing:", tanggal_transaksi)
+
     summary_df = load_excel(uploaded_summary)
     _ = extract_total_summary(summary_df)
 
