@@ -164,10 +164,12 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
         'TANGGAL INVOICE': 'Tanggal Transaksi',
         'HARGA': 'Invoice'
     })
+    df_total['Tanggal Transaksi'] = pd.to_datetime(df_total['Tanggal Transaksi'], errors='coerce')
+    df_total = df_total.sort_values('Tanggal Transaksi')
+    df_total['Tanggal Transaksi'] = df_total['Tanggal Transaksi'].dt.strftime('%d-%m-%Y')
     df_total['Uang Masuk'] = ''
     df_total['Selisih'] = ''
     df_total = df_total[['Tanggal Transaksi', 'Invoice', 'Uang Masuk', 'Selisih']]
-    df_total['Tanggal Transaksi'] = pd.to_datetime(df_total['Tanggal Transaksi'], errors='coerce').dt.strftime('%d-%m-%Y')
     df_total["Tanggal Transaksi"] = pd.to_datetime(invoice_df["TANGGAL INVOICE"], errors='coerce').min().strftime('%d-%m-%Y') + " s.d " + pd.to_datetime(invoice_df["TANGGAL INVOICE"], errors='coerce').max().strftime('%d-%m-%Y')
 
     st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
