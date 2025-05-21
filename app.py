@@ -17,7 +17,7 @@ def extract_total_b2b(df):
         return jumlah_tiket, pendapatan
     return None, None
 
-def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pendapatan_b2b=None):
+def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pendapatan_b2b=None, total_invoice_dibayar=None):
     result = pd.merge(tiket_terjual, invoice, on='Nomor Invoice', how='outer', suffixes=('_tiket', '_invoice'))
     result = pd.merge(result, summary, on='Nomor Invoice', how='outer')
     result = pd.merge(result, rekening, left_on='Nomor Invoice', right_on='Deskripsi', how='outer')
@@ -27,8 +27,7 @@ def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pen
     if pendapatan_b2b is not None:
         result['Validasi Pendapatan'] = result['Jumlah_invoice'] == pendapatan_b2b
 
-    result['Status Rekonsiliasi'] = result.apply(
-        lambda row: 'Cocok' if row.get('Validasi Jumlah Tiket', True) and row.get('Validasi Pendapatan', True) and row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit'] else 'Tidak Cocok', axis=1
+        if total_invoice_dibayar is not No and row.get('Validasi Pendapatan', True) and row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit'] else 'Tidak Cocok', axis=1
     )
 
     return result
