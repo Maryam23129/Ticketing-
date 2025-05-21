@@ -5,6 +5,10 @@ from io import BytesIO
 def load_excel(file):
     return pd.read_excel(file)
 
+def extract_total_invoice(invoice_df):
+    filtered = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar']
+    return filtered['HARGA'].sum()
+
 def extract_total_b2b(df):
     row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \(B2B\)", regex=True).any(), axis=1)]
     if not row.empty:
@@ -58,6 +62,7 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     st.write(f"📈 Jumlah Tiket B2B: {jumlah_tiket_b2b}")
     st.write(f"💵 Pendapatan B2B: Rp {pendapatan_b2b:,.0f}")
     invoice_df = load_excel(uploaded_invoice)
+    total_invoice_dibayar = extract_total_invoice(invoi
     summary_df = load_excel(uploaded_summary)
     rekening_df = load_excel(uploaded_rekening)
 
