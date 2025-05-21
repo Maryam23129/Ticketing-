@@ -59,10 +59,21 @@ st.markdown("""
 
 st.sidebar.title("Upload File")
 
-uploaded_tiket = st.sidebar.file_uploader("📁 Upload Tiket Terjual", type=["xlsx"])
-uploaded_invoice = st.sidebar.file_uploader("📁 Upload Invoice", type=["xlsx"])
-uploaded_summary = st.sidebar.file_uploader("📁 Upload Ticket Summary", type=["xlsx"])
-uploaded_rekening = st.sidebar.file_uploader("📁 Upload Rekening Koran", type=["xlsx"])
+uploaded_files = st.sidebar.file_uploader("📁 Upload Semua File Sekaligus", type=["xlsx"], accept_multiple_files=True)
+
+uploaded_tiket = uploaded_invoice = uploaded_summary = uploaded_rekening = None
+
+if uploaded_files:
+    for file in uploaded_files:
+        fname = file.name.lower()
+        if "tiket" in fname:
+            uploaded_tiket = file
+        elif "invoice" in fname:
+            uploaded_invoice = file
+        elif "summary" in fname:
+            uploaded_summary = file
+        elif "rekening" in fname or "acc_statement" in fname:
+            uploaded_rekening = file
 
 if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekening:
     st.success("Semua file berhasil diupload. Memproses rekapitulasi...")
