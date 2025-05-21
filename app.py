@@ -69,7 +69,13 @@ if all_files:
     for file in all_files:
         fname = file.name.lower()
         if "tiket" in fname:
-            uploaded_tiket_files.a
+            uploaded_tiket_files.append(file)
+        elif "invoice" in fname:
+            uploaded_invoice = file
+        elif "summary" in fname:
+            uploaded_summary = file
+        elif "rekening" in fname or "acc_statement" in fname:
+            uploaded_rekening = file
 
 if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_rekening:
     st.success("Semua file berhasil diupload. Memproses rekapitulasi...")
@@ -133,6 +139,13 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
 
     st.subheader("📄 Tabel Rekapitulasi Hasil Rekonsiliasi")
     st.dataframe(formatted_df, use_container_width=True)
+
+    if all_files:
+        st.markdown("### 📂 Semua file terdeteksi")
+        st.write([file.name for file in all_files])
+
+        st.markdown("### ✅ Tiket terdeteksi")
+        st.write([file.name for file in uploaded_tiket_files])
 
     output_excel = to_excel(df)
     st.download_button(
