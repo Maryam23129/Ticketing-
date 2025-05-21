@@ -87,10 +87,17 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     st.success("Semua file berhasil diupload. Memproses rekapitulasi...")
 
     tiket_df = load_excel(uploaded_tiket)
-    jumlah_tiket_b2b, pendapatan_b2b, tanggal_transaksi = extract_total_b2b(tiket_df)
+    jumlah_tiket_b2b, pendapatan_b2b, _ = extract_total_b2b(tiket_df)
 
     invoice_df = load_excel(uploaded_invoice)
     total_invoice_dibayar = extract_total_invoice(invoice_df)
+
+    if 'TANGGAL INVOICE' in invoice_df.columns:
+        tanggal_awal = pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').min()
+        tanggal_akhir = pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').max()
+        tanggal_transaksi = f"{tanggal_awal.strftime('%d-%m-%Y')} s.d {tanggal_akhir.strftime('%d-%m-%Y')}"
+    else:
+        tanggal_transaksi = "Tanggal tidak tersedia"
 
     summary_df = load_excel(uploaded_summary)
     _ = extract_total_summary(summary_df)  # Tidak digunakan di output akhir saat ini
