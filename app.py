@@ -13,7 +13,7 @@ def extract_total_summary(summary_df):
 
 def extract_total_invoice(invoice_df):
     filtered = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar']
-    return filtered['HARGA'].sum()
+    return filtered['HARGA'].sum(), pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').min(), pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').max()
 
 def extract_total_b2b(df):
     row = df[df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \\(B2B\\)", regex=True).any(), axis=1)]
@@ -50,7 +50,6 @@ def to_excel(df):
     output.seek(0)
     return output
 
-# Streamlit App Layout
 st.set_page_config(page_title="Dashboard Rekonsiliasi Pendapatan Ticketing", layout="wide")
 
 st.markdown("""
@@ -86,15 +85,8 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     jumlah_tiket_b2b, pendapatan_b2b, _ = extract_total_b2b(tiket_df)
 
     invoice_df = load_excel(uploaded_invoice)
-    total_invoice_dibayar = extract_total_invoice(invoice_df)
-
-    # Ambil tanggal transaksi dari invoice
-    if 'TANGGAL INVOICE' in invoice_df.columns:
-        tanggal_awal = pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').min()
-        tanggal_akhir = pd.to_datetime(invoice_df['TANGGAL INVOICE'], errors='coerce').max()
-        tanggal_transaksi = f"{tanggal_awal.strftime('%d-%m-%Y')} s.d {tanggal_akhir.strftime('%d-%m-%Y')}"
-    else:
-        tanggal_transaksi = "Tanggal tidak tersedia"
+    total_invoice_dibayar, tanggal_awal, tanggal_akhir = extract_total_invoice(invoice_df)
+    tanggal_transaksi = f"{tanggal_awal.strftime('%d-%m-%Y')} s.d {tanggal_akhir.strftime('%d-%m-%Y')}"
 
     summary_df = load_excel(uploaded_summary)
     _ = extract_total_summary(summary_df)
@@ -102,18 +94,11 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     rekening_df = load_excel(uploaded_rekening)
     rekening_detail_df = extract_total_rekening(rekening_df)
 
-    # Filter rekening sesuai rentang tanggal invoice
-    if 's.d' in tanggal_transaksi:
-        tgl_awal_str, tgl_akhir_str = tanggal_transaksi.split(' s.d ')
-        tgl_awal = pd.to_datetime(tgl_awal_str, dayfirst=True)
-        tgl_akhir = pd.to_datetime(tgl_akhir_str, dayfirst=True)
-        filtered_rekening = rekening_detail_df[
-            (rekening_detail_df['Tanggal Transaksi'] >= tgl_awal) &
-            (rekening_detail_df['Tanggal Transaksi'] <= tgl_akhir)
-        ]
-        total_rekening_midi = filtered_rekening['Credit'].sum()
-    else:
-        total_rekening_midi = rekening_detail_df['Credit'].sum()
+    filtered_rekening = rekening_detail_df[
+        (rekening_detail_df['Tanggal Transaksi'] >= tanggal_awal) &
+        (rekening_detail_df['Tanggal Transaksi'] <= tanggal_akhir)
+    ]
+    total_rekening_midi = filtered_rekening['Credit'].sum()
 
     pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
     df = pd.DataFrame({
@@ -126,7 +111,6 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
         "Selisih": [total_invoice_dibayar - total_rekening_midi] + [0] * (len(pelabuhan_list) - 1)
     })
 
-    # Tambahkan baris TOTAL
     total_row = {
         "No": "",
         "Tanggal Transaksi": "",
@@ -138,7 +122,6 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     }
     df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
 
-    # Format untuk tampilan di Streamlit
     formatted_df = df.copy()
     for col in ["Nominal Tiket Terjual", "Invoice", "Uang Masuk", "Selisih"]:
         formatted_df[col] = formatted_df[col].apply(lambda x: f"Rp {x:,.0f}" if isinstance(x, (int, float)) and x != 0 else "")
