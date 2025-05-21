@@ -166,7 +166,7 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     })
     df_total['Tanggal Transaksi'] = pd.to_datetime(df_total['Tanggal Transaksi'], errors='coerce')
     df_total = df_total.sort_values('Tanggal Transaksi')
-    df_total['Tanggal Transaksi'] = df_total['Tanggal Transaksi'].dt.strftime('%d-%m-%Y')
+    df_total['Tanggal Transaksi'] = df_total['Tanggal Transaksi'].dt.strftime('%d-%m-%y')
     df_total['Uang Masuk'] = ''
     df_total['Selisih'] = ''
     df_total = df_total[['Tanggal Transaksi', 'Invoice', 'Uang Masuk', 'Selisih']]
