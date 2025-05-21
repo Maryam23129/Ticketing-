@@ -24,18 +24,17 @@ def extract_total_b2b(df):
     return None, None
 
 def extract_total_rekening(rekening_df):
-    rekening_df = rekening_df.iloc[12:, [1, 2, 5]].copy()
+    rekening_df = rekening_df.iloc[12:, [1, 2, 5]].dropna()
     rekening_df.columns = ['Tanggal', 'Remark', 'Credit']
-    rekening_df.dropna(subset=['Remark', 'Credit'], inplace=True)
     rekening_df = rekening_df[rekening_df['Remark'].str.contains("DARI MIDI UTAMA INDONESIA", case=False, na=False)]
     rekening_df['Credit'] = rekening_df['Credit'].replace('[^0-9.]', '', regex=True).astype(float)
     rekening_df['TanggalKode'] = rekening_df['Remark'].str.extract(r'^(\S+)')[0].str[-4:]
     rekening_df['Bulan'] = rekening_df['TanggalKode'].str[:2]
     rekening_df['Tanggal'] = rekening_df['TanggalKode'].str[2:]
     rekening_df['Tanggal Transaksi'] = pd.to_datetime('2025' + rekening_df['Bulan'] + rekening_df['Tanggal'], format='%Y%m%d', errors='coerce')
-    return rekening_df['Credit'].sum()
+    return rekening_df, rekening_df['Credit'].sum()
 
-def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pendapatan_b2b=None, total_invoice_dibayar=None, total_rekening_credit=None):
+def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pendapatan_b2b=None, total_invoice_dibayar=None, total_rekening_midi=None):
     result = pd.merge(tiket_terjual, invoice, on='Nomor Invoice', how='outer', suffixes=('_tiket', '_invoice'))
     result = pd.merge(result, summary, on='Nomor Invoice', how='outer')
     result = pd.merge(result, rekening, left_on='Nomor Invoice', right_on='Deskripsi', how='outer')
@@ -46,15 +45,15 @@ def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pen
         result['Validasi Pendapatan'] = result['Jumlah_invoice'] == pendapatan_b2b
     if total_invoice_dibayar is not None:
         result['Validasi Invoice Dibayar'] = result['Jumlah_invoice'] == total_invoice_dibayar
-    if total_rekening_credit is not None:
-        result['Validasi Rekening'] = result['Jumlah_invoice'] == total_rekening_credit
+    if total_rekening_midi is not None:
+        result['Validasi Rekening'] = result['Jumlah_invoice'] == total_rekening_midi
 
     result['Status Rekonsiliasi'] = result.apply(lambda row: 'Cocok' if all([
         row.get('Validasi Jumlah Tiket', True),
         row.get('Validasi Pendapatan', True),
         row.get('Validasi Invoice Dibayar', True),
         row.get('Validasi Rekening', True),
-        row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit'] == total_rekening_credit
+        row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit']
     ]) else 'Tidak Cocok', axis=1)
 
     return result
@@ -94,10 +93,43 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     total_summary_tarif = extract_total_summary(summary_df)
     st.write(f"🧾 Total Tarif dari Ticket Summary: Rp {total_summary_tarif:,.0f}")
     rekening_df = load_excel(uploaded_rekening)
-    total_rekening_credit = extract_total_rekening(rekening_df)
-    st.write(f"🏦 Total Kredit dari MIDI UTAMA INDONESIA: Rp {total_rekening_credit:,.0f}")
+    rekening_detail_df, total_rekening_midi = extract_total_rekening(rekening_df)
+    st.write(f"🏦 Total Kredit dari MIDI UTAMA INDONESIA: Rp {total_rekening_midi:,.0f}")
 
-    hasil_rekonsiliasi = rekonsiliasi(tiket_df, invoice_df, summary_df, rekening_df, jumlah_tiket_b2b, pendapatan_b2b, total_invoice_dibayar, total_rekening_credit)
+    hasil_rekonsiliasi = rekonsiliasi(tiket_df, invoice_df, summary_df, rekening_df, jumlah_tiket_b2b, pendapatan_b2b, total_invoice_dibayar, total_rekening_midi)
+
+    # Buat tabel final sesuai template
+    tanggal_transaksi = tiket_df[tiket_df.apply(lambda r: r.astype(str).str.contains("TOTAL JUMLAH \\(B2B\\)", regex=True).any(), axis=1)].iloc[0, 4]
+    pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
+
+    tabel_template = pd.DataFrame({
+        "No": list(range(1, len(pelabuhan_list) + 1)),
+        "Tanggal Transaksi": [tanggal_transaksi] * len(pelabuhan_list),
+        "Pelabuhan Asal": pelabuhan_list,
+        "Nominal Tiket Terjual": [pendapatan_b2b] + [0] * (len(pelabuhan_list) - 1),
+        "Invoice": [total_invoice_dibayar] + [0] * (len(pelabuhan_list) - 1),
+        "Uang Masuk": [total_rekening_midi] + [0] * (len(pelabuhan_list) - 1),
+        "Selisih": [total_invoice_dibayar - total_rekening_midi] + [0] * (len(pelabuhan_list) - 1)
+    })
+
+    st.subheader("Rekapitulasi Hasil Rekonsiliasi")
+    st.dataframe(tabel_template)
+
+    # Export ke Excel
+    def to_excel_summary(df):
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name='Rekapitulasi')
+        output.seek(0)
+        return output
+
+    output_summary_excel = to_excel_summary(tabel_template)
+    st.download_button(
+        label="Download Tabel Rekapitulasi",
+        data=output_summary_excel,
+        file_name="rekapitulasi_rekonsiliasi.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
     st.subheader("Hasil Rekonsiliasi")
     st.dataframe(hasil_rekonsiliasi)
