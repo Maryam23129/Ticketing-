@@ -46,7 +46,12 @@ def to_excel(df):
         currency_format = workbook.add_format({'num_format': '"Rp" #,##0'})
         for col_num, column in enumerate(df.columns):
             if column in ['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih']:
-                worksheet.set_column(col_num, col_num, 20, currency_format)
+                worksheet.set_column(col_num, col_num, 20, currency_format if column in ['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih'] else None)
+
+        # Tambahkan border ke seluruh range
+        border_format = workbook.add_format({'border': 1})
+        worksheet.conditional_format(0, 0, len(df), len(df.columns) - 1, {'type': 'no_blanks', 'format': border_format})
+        worksheet.conditional_format(0, 0, len(df), len(df.columns) - 1, {'type': 'blanks', 'format': border_format})
             else:
                 worksheet.set_column(col_num, col_num, 20)
     output.seek(0)
