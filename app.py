@@ -157,7 +157,6 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     for col in ["Nominal Tiket Terjual", "Invoice", "Uang Masuk", "Selisih"]:
         formatted_df[col] = formatted_df[col].apply(lambda x: f"Rp {x:,.0f}" if isinstance(x, (int, float)) and x != 0 else "")
 
-    st.success("✅ Rekonsiliasi selesai! Tabel hasil berhasil dibuat.")
     df_pelabuhan = formatted_df[formatted_df["Pelabuhan Asal"] != "TOTAL"].drop(columns=["Uang Masuk"])
     df_total = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar'][['TANGGAL INVOICE', 'HARGA']].copy()
     df_total = df_total.rename(columns={
