@@ -20,8 +20,9 @@ def extract_total_b2b(df):
     if not row.empty:
         jumlah_tiket = pd.to_numeric(row.iloc[0, 3], errors='coerce')
         pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
-        tanggal = row.iloc[0, 4] if 'TANGGAL' in df.columns else None
+        tanggal = df.iloc[5, 4]  # Ambil dari baris ke-5 kolom ke-5 sesuai struktur file
         return jumlah_tiket, pendapatan, tanggal
+    return None, None, None
     return None, None, None
 
 def extract_total_rekening(rekening_df):
