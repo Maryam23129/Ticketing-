@@ -103,6 +103,7 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     else:
         tanggal_transaksi = "Tanggal tidak tersedia"
 
+    with st.expander("🛠️ Debug Parsing Invoice (klik untuk buka)", expanded=False):
     st.write("🧪 Nama file invoice:", uploaded_invoice.name)
     st.write("🧪 Regex match result:", match.groups() if match else "No match")
     st.write("🧪 Tanggal Transaksi hasil parsing:", tanggal_transaksi)
