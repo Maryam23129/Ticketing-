@@ -130,9 +130,9 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     ],
         "Uang Masuk": [total_rekening_midi] + [0] * (len(pelabuhan_list) - 1),
         "Selisih": [
-        invoice_by_pelabuhan[invoice_by_pelabuhan['KEBERANGKATAN'].str.lower() == pel.lower()]['HARGA'].sum() - total_rekening_midi
-        if i == 0 else 0
-        for i, pel in enumerate(pelabuhan_list)
+        invoice_by_pelabuhan[invoice_by_pelabuhan['KEBERANGKATAN'] == pel.lower()]['HARGA'].sum() -
+        df[df['Pelabuhan Asal'] == pel]['Uang Masuk'].values[0]
+        for pel in pelabuhan_list
     ]
     })
 
@@ -143,7 +143,7 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
         "Nominal Tiket Terjual": df["Nominal Tiket Terjual"].sum(),
         "Invoice": df["Invoice"].sum(),
         "Uang Masuk": df["Uang Masuk"].sum(),
-        "Selisih": df["Selisih"].sum()
+        "Selisih": df["Invoice"].sum() - df["Uang Masuk"].sum()
     }
     df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
 
