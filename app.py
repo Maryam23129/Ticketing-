@@ -78,7 +78,7 @@ if all_files:
             uploaded_rekening = file
 
 if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_rekening:
-    st.success("Semua file berhasil diupload. Memproses rekapitulasi...")
+    
 
     b2b_list = []
     for tiket_file in uploaded_tiket_files:
