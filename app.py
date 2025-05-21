@@ -39,6 +39,14 @@ def to_excel(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Rekapitulasi')
+        workbook  = writer.book
+        worksheet = writer.sheets['Rekapitulasi']
+        currency_format = workbook.add_format({'num_format': '"Rp" #,##0'})
+        for col_num, column in enumerate(df.columns):
+            if column in ['Nominal Tiket Terjual', 'Invoice', 'Uang Masuk', 'Selisih']:
+                worksheet.set_column(col_num, col_num, 20, currency_format)
+            else:
+                worksheet.set_column(col_num, col_num, 20)
     output.seek(0)
     return output
 
