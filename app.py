@@ -116,6 +116,17 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     total_rekening_midi = rekening_detail_df['Credit'].sum()
 
     pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
+    pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
+
+    invoice_list = [
+        invoice_by_pelabuhan[invoice_by_pelabuhan['KEBERANGKATAN'] == pel.lower()]['HARGA'].sum()
+        for pel in pelabuhan_list
+    ]
+
+    uang_masuk_list = [total_rekening_midi] + [0] * (len(pelabuhan_list) - 1)
+
+    selisih_list = [inv - uang for inv, uang in zip(invoice_list, uang_masuk_list)]
+
     df = pd.DataFrame({
         "No": list(range(1, len(pelabuhan_list) + 1)),
         "Tanggal Transaksi": [tanggal_transaksi] * len(pelabuhan_list),
@@ -124,16 +135,9 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
             next((b['Pendapatan'] for b in b2b_list if b['Pelabuhan'].lower() == pel.lower()), 0)
             for pel in pelabuhan_list
         ],
-        "Invoice": [
-        invoice_by_pelabuhan[invoice_by_pelabuhan['KEBERANGKATAN'] == pel.lower()]['HARGA'].sum()
-        for pel in pelabuhan_list
-    ],
-        "Uang Masuk": [total_rekening_midi] + [0] * (len(pelabuhan_list) - 1),
-        "Selisih": [
-        invoice_by_pelabuhan[invoice_by_pelabuhan['KEBERANGKATAN'] == pel.lower()]['HARGA'].sum() -
-        df[df['Pelabuhan Asal'] == pel]['Uang Masuk'].values[0]
-        for pel in pelabuhan_list
-    ]
+        "Invoice": invoice_list,
+        "Uang Masuk": uang_masuk_list,
+        "Selisih": selisih_list
     })
 
     total_row = {
