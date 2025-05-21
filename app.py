@@ -36,14 +36,12 @@ def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pen
         if total_invoice_dibayar is not None:
         result['Validasi Invoice Dibayar'] = result['Jumlah_invoice'] == total_invoice_dibayar
 
-    result['Status Rekonsiliasi'] = result.apply(
-        lambda row: 'Cocok' if all([
-            row.get('Validasi Jumlah Tiket', True),
-            row.get('Validasi Pendapatan', True),
-            row.get('Validasi Invoice Dibayar', True),
-            row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit']
-        ]) else 'Tidak Cocok', axis=1) and row.get('Validasi Pendapatan', True) and row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit'] else 'Tidak Cocok', axis=1
-    )
+    result['Status Rekonsiliasi'] = result.apply(lambda row: 'Cocok' if all([
+        row.get('Validasi Jumlah Tiket', True),
+        row.get('Validasi Pendapatan', True),
+        row.get('Validasi Invoice Dibayar', True),
+        row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit']
+    ]) else 'Tidak Cocok', axis=1)
 
     return result
 
