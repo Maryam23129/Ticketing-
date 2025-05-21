@@ -20,7 +20,11 @@ def extract_total_b2b(df):
     if not row.empty:
         jumlah_tiket = pd.to_numeric(row.iloc[0, 3], errors='coerce')
         pendapatan = pd.to_numeric(row.iloc[0, 4], errors='coerce')
-        tanggal = df.iloc[5, 4]  # Ambil dari baris ke-5 kolom ke-5 sesuai struktur file
+        tanggal_raw = df.iloc[4, 4]
+        try:
+            tanggal = pd.to_datetime(tanggal_raw).strftime('%d-%m-%Y')
+        except:
+            tanggal = tanggal_raw  # Ambil dari baris ke-5 kolom ke-5 sesuai struktur file
         return jumlah_tiket, pendapatan, tanggal
     return None, None, None
     return None, None, None
