@@ -13,12 +13,20 @@ def extract_total_b2b(df):
         return jumlah_tiket, pendapatan
     return None, None
 
-def rekonsiliasi(tiket_terjual, invoice, summary, rekening):
-    # Contoh logika dasar rekonsiliasi: gabungkan dan bandingkan berdasarkan kolom 'Nomor Tiket' atau 'Nomor Invoice'
+def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pendapatan_b2b=None):
     result = pd.merge(tiket_terjual, invoice, on='Nomor Invoice', how='outer', suffixes=('_tiket', '_invoice'))
     result = pd.merge(result, summary, on='Nomor Invoice', how='outer')
     result = pd.merge(result, rekening, left_on='Nomor Invoice', right_on='Deskripsi', how='outer')
-    result['Status Rekonsiliasi'] = result.apply(lambda row: 'Cocok' if row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit'] else 'Tidak Cocok', axis=1)
+
+    if jumlah_b2b is not None:
+        result['Validasi Jumlah Tiket'] = result['Jumlah_tiket'] == jumlah_b2b
+    if pendapatan_b2b is not None:
+        result['Validasi Pendapatan'] = result['Jumlah_invoice'] == pendapatan_b2b
+
+    result['Status Rekonsiliasi'] = result.apply(
+        lambda row: 'Cocok' if row.get('Validasi Jumlah Tiket', True) and row.get('Validasi Pendapatan', True) and row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit'] else 'Tidak Cocok', axis=1
+    )
+
     return result
 
 def to_excel(df):
@@ -53,7 +61,7 @@ if uploaded_tiket and uploaded_invoice and uploaded_summary and uploaded_rekenin
     summary_df = load_excel(uploaded_summary)
     rekening_df = load_excel(uploaded_rekening)
 
-    hasil_rekonsiliasi = rekonsiliasi(tiket_df, invoice_df, summary_df, rekening_df)
+    hasil_rekonsiliasi = rekonsiliasi(tiket_df, invoice_df, summary_df, rekening_df, jumlah_tiket_b2b, pendapatan_b2b)
 
     st.subheader("Hasil Rekonsiliasi")
     st.dataframe(hasil_rekonsiliasi)
