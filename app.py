@@ -24,25 +24,20 @@ def extract_total_b2b(df):
     return None, None, None
 
 def extract_total_rekening(rekening_df):
-    # Debugging: tampilkan hasil ekstraksi tanggal dari Remark
-st.write("🔍 Sampel Remark & Tanggal Transaksi (dari 4 digit akhir kata pertama):")
-st.dataframe(rekening_detail_df[['Remark', 'TanggalKode', 'Tanggal Transaksi']].head(10))
-
-# Debugging: tampilkan rentang tanggal dari invoice
-st.write(f"📆 Rentang invoice: {tanggal_awal.strftime('%d-%m-%Y')} s.d {tanggal_akhir.strftime('%d-%m-%Y')}")
-
-# Filter transaksi rekening MIDI dalam rentang tanggal invoice
-filtered_rekening = rekening_detail_df[
-    (rekening_detail_df['Tanggal Transaksi'] >= tanggal_awal) &
-    (rekening_detail_df['Tanggal Transaksi'] <= tanggal_akhir)
-]
-
-# Debugging: tampilkan hasil transaksi yang lolos filter
-st.write("✅ Transaksi MIDI dalam rentang tanggal invoice:")
-st.dataframe(filtered_rekening[['Tanggal Transaksi', 'Credit', 'Remark']])
-
-# Hitung total uang masuk
-total_rekening_midi = filtered_rekening['Credit'].sum()
+    rekening_df = rekening_df.iloc[12:, [1, 2, 5]].dropna()
+    rekening_df.columns = ['Tanggal', 'Remark', 'Credit']
+    rekening_df = rekening_df[rekening_df['Remark'].str.contains("DARI MIDI UTAMA INDONESIA", case=False, na=False)]
+    rekening_df['Credit'] = rekening_df['Credit'].replace('[^0-9.]', '', regex=True).astype(float)
+    rekening_df['KataPertama'] = rekening_df['Remark'].str.extract(r'^(\S+)')[0]
+    rekening_df['TanggalKode'] = rekening_df['KataPertama'].str.extract(r'(\d{4})$')[0]
+    rekening_df['Bulan'] = rekening_df['TanggalKode'].str[:2]
+    rekening_df['Tanggal'] = rekening_df['TanggalKode'].str[2:]
+    rekening_df['Tanggal Transaksi'] = pd.to_datetime(
+        '2025' + rekening_df['Bulan'] + rekening_df['Tanggal'],
+        format='%Y%m%d',
+        errors='coerce'
+    )
+    return rekening_df
 
 def to_excel(df):
     output = BytesIO()
