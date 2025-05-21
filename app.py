@@ -34,7 +34,7 @@ def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pen
         result['Validasi Pendapatan'] = result['Jumlah_invoice'] == pendapatan_b2b
 
         if total_invoice_dibayar is not None:
-        result['Validasi Invoice Dibayar'] = result['Jumlah_invoice'] == total_invoice_dibayar
+        result['Validasi Invoice Dibayar'] = result['Jumlah_invoice'] == total_invoice_dibayar = result['Jumlah_invoice'] == total_invoice_dibayar
 
     result['Status Rekonsiliasi'] = result.apply(lambda row: 'Cocok' if all([
         row.get('Validasi Jumlah Tiket', True),
