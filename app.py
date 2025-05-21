@@ -42,8 +42,7 @@ def rekonsiliasi(tiket_terjual, invoice, summary, rekening, jumlah_b2b=None, pen
             row.get('Validasi Pendapatan', True),
             row.get('Validasi Invoice Dibayar', True),
             row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit']
-        ]) else 'Tidak Cocok', axis=1
-    ) and row.get('Validasi Pendapatan', True) and row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit'] else 'Tidak Cocok', axis=1
+        ]) else 'Tidak Cocok', axis=1) and row.get('Validasi Pendapatan', True) and row['Jumlah_tiket'] == row['Jumlah_invoice'] == row['Debit'] else 'Tidak Cocok', axis=1
     )
 
     return result
