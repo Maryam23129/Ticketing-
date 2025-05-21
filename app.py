@@ -96,7 +96,6 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     invoice_df = load_excel(uploaded_invoice)
     total_invoice_dibayar = extract_total_invoice(invoice_df)
 
-    # Ambil tanggal dari nama file invoice jika tersedia
     match = re.search(r'(\d{4}-\d{2}-\d{2})\s*s[\-_]d\s*(\d{4}-\d{2}-\d{2})', uploaded_invoice.name)
     if match:
         tanggal_awal_str, tanggal_akhir_str = match.groups()
@@ -105,6 +104,7 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
         tanggal_transaksi = "Tanggal tidak tersedia"
 
     st.write("🧪 Nama file invoice:", uploaded_invoice.name)
+    st.write("🧪 Regex match result:", match.groups() if match else "No match")
     st.write("🧪 Tanggal Transaksi hasil parsing:", tanggal_transaksi)
 
     summary_df = load_excel(uploaded_summary)
