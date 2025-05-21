@@ -163,7 +163,7 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
     st.dataframe(df_pelabuhan, use_container_width=True)
 
-    st.subheader("📄 Tabel Rekapitulasi Total Keseluruhan")
+    st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Invoice dan Bank")
     st.dataframe(df_total, use_container_width=True)
 
     output_excel = to_excel(df)
