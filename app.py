@@ -67,8 +67,10 @@ if st.sidebar.button("➕ Tambah File Lagi"):
 
 uploaded_tiket = uploaded_invoice = uploaded_summary = uploaded_rekening = None
 
-if uploaded_files:
-    for file in uploaded_files:
+all_files = uploaded_files + st.session_state.get("extra_upload", []) if uploaded_files else st.session_state.get("extra_upload", [])
+
+if all_files:
+    for file in all_files:
         fname = file.name.lower()
         if "tiket" in fname:
             uploaded_tiket = file
