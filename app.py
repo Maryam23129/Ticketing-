@@ -14,13 +14,7 @@ def extract_total_summary(summary_df):
 
 def extract_total_invoice(invoice_df):
     filtered = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar']
-    invoice_df['HARGA'] = pd.to_numeric(invoice_df['HARGA'], errors='coerce')
-invoice_by_pelabuhan = (
-    filtered_invoice.groupby('KEBERANGKATAN')['HARGA']
-    .sum()
-    .reset_index()
-)
-invoice_by_pelabuhan['KEBERANGKATAN'] = invoice_by_pelabuhan['KEBERANGKATAN'].str.lower().str.replace('pelabuhan', '').str.strip()
+    return filtered['HARGA'].sum()
 
 def extract_total_rekening(rekening_df):
     rekening_df = rekening_df.iloc[12:, [1, 2, 5]].dropna()
@@ -96,12 +90,14 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
             b2b_list.append({"Pelabuhan": pelabuhan, "Pendapatan": pendapatan})
 
     invoice_df = load_excel(uploaded_invoice)
+    invoice_df['HARGA'] = pd.to_numeric(invoice_df['HARGA'], errors='coerce')
     filtered_invoice = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar']
     invoice_by_pelabuhan = (
         filtered_invoice.groupby('KEBERANGKATAN')['HARGA']
         .sum()
         .reset_index()
     )
+    invoice_by_pelabuhan['KEBERANGKATAN'] = invoice_by_pelabuhan['KEBERANGKATAN'].str.lower().str.replace('pelabuhan', '').str.strip()
 
     match = re.search(r'(\d{4}-\d{2}-\d{2})\s*s[\-_]d\s*(\d{4}-\d{2}-\d{2})', uploaded_invoice.name)
     if match:
@@ -130,8 +126,8 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
         ],
         "Invoice": [
         invoice_by_pelabuhan[invoice_by_pelabuhan['KEBERANGKATAN'] == pel.lower()]['HARGA'].sum()
-    for pel in pelabuhan_list
-],
+        for pel in pelabuhan_list
+    ],
         "Uang Masuk": [total_rekening_midi] + [0] * (len(pelabuhan_list) - 1),
         "Selisih": [
         invoice_by_pelabuhan[invoice_by_pelabuhan['KEBERANGKATAN'].str.lower() == pel.lower()]['HARGA'].sum() - total_rekening_midi
