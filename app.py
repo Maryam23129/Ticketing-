@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from io import BytesIO
@@ -21,7 +20,13 @@ def to_excel(df):
     output.seek(0)
     return output
 
-st.set_page_config(page_title="Rekonsiliasi Tiket Kapal", layout="wide")
+st.set_page_config(page_title="Dashboard Rekonsiliasi Pendapatan Ticketing", layout="wide")
+
+# Header dengan ikon
+st.markdown("""
+    <h1 style='text-align: center;'>📊 Dashboard Rekonsiliasi Pendapatan Ticketing 🚢💰</h1>
+""", unsafe_allow_html=True)
+
 st.sidebar.title("Upload File")
 
 uploaded_tiket = st.sidebar.file_uploader("Upload Tiket Terjual", type=["xlsx"])
