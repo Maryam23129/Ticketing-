@@ -182,15 +182,7 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     )
     df_total['Selisih'] = df_total['Invoice'] - df_total['Uang Masuk']
 
-    # DEBUG: tampilkan isi dan format tanggal untuk pencocokan
-    st.write("📌 Tanggal Transaksi di df_total:")
-    st.write(df_total['Tanggal Transaksi'].unique())
-
-    st.write("📌 Tanggal Transaksi di rekening_detail_df:")
-    st.write(rekening_detail_df['Tanggal Transaksi'].unique())
-
-    st.write("📌 Sampel rekening MIDI:")
-    st.dataframe(rekening_detail_df[['Tanggal Transaksi', 'Credit', 'Remark']].head())
+    
 
     st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
     st.dataframe(df_pelabuhan, use_container_width=True)
