@@ -154,6 +154,7 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
 
     st.success("✅ Rekonsiliasi selesai! Tabel hasil berhasil dibuat.")
     df_pelabuhan = formatted_df[formatted_df["Pelabuhan Asal"] != "TOTAL"].drop(columns=["Uang Masuk", "Invoice", "Selisih"])
+df_pelabuhan["Naik Turun Golongan"] = ""
     df_total = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar'][['TANGGAL INVOICE', 'HARGA']].copy()
     df_total = df_total.rename(columns={
         'TANGGAL INVOICE': 'Tanggal Transaksi',
