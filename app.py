@@ -51,11 +51,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.sidebar.title("Upload File")
-if st.sidebar.button("🔄 Reset File Upload"):
-    for key in ["main_upload", "extra_upload", "uploaded_files", "uploaded_tiket_files"]:
-        st.session_state.pop(key, None)
-    st.sidebar.warning("File upload telah di-reset. Silakan refresh halaman secara manual.")
-
+if 
 uploaded_files = st.sidebar.file_uploader("📁 Upload Semua File Sekaligus", type=["xlsx"], accept_multiple_files=True, key="main_upload")
 if st.sidebar.button("➕ Tambah File Lagi"):
     st.sidebar.file_uploader("📁 Upload Tambahan", type=["xlsx"], accept_multiple_files=True, key="extra_upload")
