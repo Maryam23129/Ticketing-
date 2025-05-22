@@ -153,36 +153,6 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
         formatted_df[col] = formatted_df[col].apply(lambda x: f"Rp {x:,.0f}" if isinstance(x, (int, float)) and x != 0 else "")
 
     st.success("✅ Rekonsiliasi selesai! Tabel hasil berhasil dibuat.")
-    # Ubah format 'Nominal Tiket Terjual' ke float
-df_pelabuhan["Nominal Tiket Terjual"] = (
-    df_pelabuhan["Nominal Tiket Terjual"]
-    .astype(str)
-    .str.replace('Rp', '', regex=False)
-    .str.replace('.', '', regex=False)
-    .str.replace(',', '', regex=False)
-    .str.extract(r'(\d+)', expand=False)
-    .fillna('0')
-    .astype(float)
-)
-
-# Buat baris TOTAL
-df_total_row = pd.DataFrame({
-    "No": [""],
-    "Tanggal Transaksi": [""],
-    "Pelabuhan Asal": ["**TOTAL**"],
-    "Nominal Tiket Terjual": [df_pelabuhan["Nominal Tiket Terjual"].sum()]
-})
-
-# Gabungkan & format ulang
-df_pelabuhan_all = pd.concat([df_pelabuhan, df_total_row], ignore_index=True)
-df_pelabuhan_all["Nominal Tiket Terjual"] = df_pelabuhan_all["Nominal Tiket Terjual"].apply(
-    lambda x: f"Rp {x:,.0f}" if isinstance(x, (int, float)) and x != 0 else ""
-)
-
-# Tampilkan
-st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
-st.markdown(df_pelabuhan_all.to_html(escape=False, index=False), unsafe_allow_html=True)
-
     df_pelabuhan = formatted_df[formatted_df["Pelabuhan Asal"] != "TOTAL"].drop(columns=["Uang Masuk", "Invoice", "Selisih"])
     df_total = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar'][['TANGGAL INVOICE', 'HARGA']].copy()
     df_total = df_total.rename(columns={
