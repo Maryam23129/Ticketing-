@@ -179,10 +179,24 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     
 
     st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
-    st.dataframe(df_pelabuhan, use_container_width=True)
+    df_pelabuhan_total = pd.DataFrame(df_pelabuhan.select_dtypes(include=['number']).sum()).T
+    df_pelabuhan_total.insert(0, 'No', '')
+    df_pelabuhan_total.insert(1, 'Tanggal Transaksi', '')
+    df_pelabuhan_total.insert(2, 'Pelabuhan Asal', 'TOTAL')
+    st.dataframe(pd.concat([df_pelabuhan, df_pelabuhan_total], ignore_index=True), use_container_width=True)
 
     st.subheader("📄 Tabel Rekapitulasi Total Keseluruhan")
-    st.dataframe(df_total, use_container_width=True)
+    df_total_row = df_total.copy()
+    df_total_row['Invoice'] = pd.to_numeric(df_total_row['Invoice'], errors='coerce')
+    df_total_row['Uang Masuk'] = pd.to_numeric(df_total_row['Uang Masuk'], errors='coerce')
+    df_total_row['Selisih'] = pd.to_numeric(df_total_row['Selisih'], errors='coerce')
+    df_total_total = pd.DataFrame({
+        'Tanggal Transaksi': ['TOTAL'],
+        'Invoice': [df_total_row['Invoice'].sum()],
+        'Uang Masuk': [df_total_row['Uang Masuk'].sum()],
+        'Selisih': [df_total_row['Selisih'].sum()]
+    })
+    st.dataframe(pd.concat([df_total, df_total_total], ignore_index=True), use_container_width=True)
 
     output_excel = to_excel(df)
     st.download_button(
