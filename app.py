@@ -12,10 +12,6 @@ def extract_total_summary(summary_df):
     summary_df["TARIF"] = pd.to_numeric(summary_df["TARIF"], errors='coerce')
     return summary_df["TARIF"].sum()
 
-def extract_total_invoice(invoice_df):
-    filtered = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar']
-    return filtered['HARGA'].sum()
-
 def extract_total_rekening(rekening_df):
     rekening_df = rekening_df.iloc[12:, [1, 2, 5]].dropna()
     rekening_df.columns = ['Tanggal', 'Remark', 'Credit']
@@ -146,8 +142,19 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     for col in ["Nominal Tiket Terjual", "Invoice", "Uang Masuk", "Selisih"]:
         formatted_df[col] = formatted_df[col].apply(lambda x: f"Rp {x:,.0f}" if isinstance(x, (int, float)) and x != 0 else "")
 
-    # Pastikan kolom Naik Turun Golongan tetap ada
     formatted_df["Naik Turun Golongan"] = df["Naik Turun Golongan"]
+
+    kolom_urutan = [
+        "No",
+        "Tanggal Transaksi",
+        "Pelabuhan Asal",
+        "Nominal Tiket Terjual",
+        "Invoice",
+        "Uang Masuk",
+        "Selisih",
+        "Naik Turun Golongan"
+    ]
+    formatted_df = formatted_df[kolom_urutan]
 
     st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
     df_pelabuhan = formatted_df[formatted_df["Pelabuhan Asal"] != "TOTAL"]
