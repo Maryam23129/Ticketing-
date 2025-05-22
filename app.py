@@ -172,8 +172,9 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     df_total['Selisih'] = ''
     df_total = df_total[['Tanggal Transaksi', 'Invoice', 'Uang Masuk', 'Selisih']]
 
-    # Konversi tanggal rekening untuk pencocokan
-    rekening_detail_df['Tanggal Transaksi'] = pd.to_datetime(rekening_detail_df['Tanggal Transaksi']).dt.strftime('%d-%m-%y')
+    # Filter remark MIDI dan konversi tanggal transaksi
+    rekening_detail_df = rekening_detail_df[rekening_detail_df['Remark'].str.contains("MIDI UTAMA", case=False, na=False)]
+    rekening_detail_df['Tanggal Transaksi'] = pd.to_datetime(rekening_detail_df['Tanggal Transaksi'], errors='coerce').dt.strftime('%d-%m-%y')
 
     # Hitung uang masuk dan selisih per tanggal transaksi invoice
     df_total['Uang Masuk'] = df_total['Tanggal Transaksi'].map(
