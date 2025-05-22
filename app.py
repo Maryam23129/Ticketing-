@@ -171,6 +171,15 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     df_total['Selisih'] = ''
     df_total = df_total[['Tanggal Transaksi', 'Invoice', 'Uang Masuk', 'Selisih']]
 
+    # Konversi tanggal rekening untuk pencocokan
+    rekening_detail_df['Tanggal Transaksi'] = pd.to_datetime(rekening_detail_df['Tanggal Transaksi']).dt.strftime('%d-%m-%y')
+
+    # Hitung uang masuk dan selisih per tanggal transaksi invoice
+    df_total['Uang Masuk'] = df_total['Tanggal Transaksi'].map(
+        lambda tgl: rekening_detail_df[rekening_detail_df['Tanggal Transaksi'] == tgl]['Credit'].sum()
+    )
+    df_total['Selisih'] = df_total['Invoice'] - df_total['Uang Masuk']
+
     st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
     st.dataframe(df_pelabuhan, use_container_width=True)
 
