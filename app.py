@@ -52,9 +52,10 @@ st.markdown("""
 
 st.sidebar.title("Upload File")
 if st.sidebar.button("🔄 Reset File Upload"):
-    for key in ["main_upload", "extra_upload"]:
-        if key in st.session_state:
-            del st.session_state[key]
+    st.session_state.pop("main_upload", None)
+    st.session_state.pop("extra_upload", None)
+    st.session_state.pop("uploaded_files", None)
+    st.session_state.pop("uploaded_tiket_files", None)
     st.experimental_rerun()
 
 uploaded_files = st.sidebar.file_uploader("📁 Upload Semua File Sekaligus", type=["xlsx"], accept_multiple_files=True, key="main_upload")
