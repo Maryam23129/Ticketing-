@@ -121,9 +121,9 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
         "Invoice": invoice_list,
         "Uang Masuk": uang_masuk_list,
         "Selisih": selisih_list,
-        "Pengurangan": ["-"] * len(pelabuhan_list),
-        "Penambahan": ["-"] * len(pelabuhan_list),
-        "Naik Turun Golongan": ["-"] * len(pelabuhan_list)
+        "Pengurangan": ["Belum Diisi"] * len(pelabuhan_list),
+        "Penambahan": ["Belum Diisi"] * len(pelabuhan_list),
+        "Naik Turun Golongan": ["Belum Diisi"] * len(pelabuhan_list)
     })
 
     total_row = {
@@ -146,12 +146,10 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     for col in ["Nominal Tiket Terjual", "Invoice", "Uang Masuk", "Selisih"]:
         formatted_df[col] = formatted_df[col].apply(lambda x: f"Rp {x:,.0f}" if isinstance(x, (int, float)) and x != 0 else "")
 
-    # Pastikan kolom tambahan masuk
     formatted_df["Pengurangan"] = df["Pengurangan"]
     formatted_df["Penambahan"] = df["Penambahan"]
     formatted_df["Naik Turun Golongan"] = df["Naik Turun Golongan"]
 
-    # Urutkan kolom
     kolom_urutan = [
         "No",
         "Tanggal Transaksi",
