@@ -72,8 +72,6 @@ if all_files:
             uploaded_rekening = file
 
 if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_rekening:
-    
-
     b2b_list = []
     for tiket_file in uploaded_tiket_files:
         df_tiket = load_excel(tiket_file)
@@ -86,116 +84,49 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     invoice_df = load_excel(uploaded_invoice)
     invoice_df['HARGA'] = pd.to_numeric(invoice_df['HARGA'], errors='coerce')
     filtered_invoice = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar']
-    invoice_by_pelabuhan = (
-        filtered_invoice.groupby('KEBERANGKATAN')['HARGA']
-        .sum()
-        .reset_index()
-    )
-    invoice_by_pelabuhan['KEBERANGKATAN'] = invoice_by_pelabuhan['KEBERANGKATAN'].str.lower().str.replace('pelabuhan', '').str.strip()
 
-    match = re.search(r'(\d{4}-\d{2}-\d{2})\s*s[\-_]d\s*(\d{4}-\d{2}-\d{2})', uploaded_invoice.name)
-    if match:
-        tanggal_awal_str, tanggal_akhir_str = match.groups()
-        tanggal_transaksi = f"{pd.to_datetime(tanggal_awal_str).strftime('%d-%m-%Y')} s.d {pd.to_datetime(tanggal_akhir_str).strftime('%d-%m-%Y')}"
-    else:
-        tanggal_transaksi = "Tanggal tidak tersedia"
-
-    
-
-    summary_df = load_excel(uploaded_summary)
-    _ = extract_total_summary(summary_df)
-
-    rekening_df = load_excel(uploaded_rekening)
-    rekening_detail_df = extract_total_rekening(rekening_df)
-    rekening_detail_df = rekening_detail_df[rekening_detail_df['Remark'].str.contains("MIDI UTAMA INDONESIA", case=False, na=False)]
-    total_rekening_midi = rekening_detail_df['Credit'].sum()
-
-    pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
-    pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
-
-    invoice_list = [
-        invoice_by_pelabuhan[invoice_by_pelabuhan['KEBERANGKATAN'] == pel.lower()]['HARGA'].sum()
-        for pel in pelabuhan_list
-    ]
-
-    uang_masuk_list = [total_rekening_midi] + [0] * (len(pelabuhan_list) - 1)
-
-    selisih_list = [inv - uang for inv, uang in zip(invoice_list, uang_masuk_list)]
-
-    df = pd.DataFrame({
-        "No": list(range(1, len(pelabuhan_list) + 1)),
-        "Tanggal Transaksi": [tanggal_transaksi] * len(pelabuhan_list),
-        "Pelabuhan Asal": pelabuhan_list,
-        "Nominal Tiket Terjual": [
-            next((b['Pendapatan'] for b in b2b_list if b['Pelabuhan'].lower() == pel.lower()), 0)
-            for pel in pelabuhan_list
-        ],
-        "Invoice": invoice_list,
-        "Uang Masuk": uang_masuk_list,
-        "Selisih": selisih_list
-    })
-
-    total_row = {
-        "No": "",
-        "Tanggal Transaksi": "",
-        "Pelabuhan Asal": "TOTAL",
-        "Nominal Tiket Terjual": df["Nominal Tiket Terjual"].sum(),
-        "Invoice": df["Invoice"].sum(),
-        "Uang Masuk": df["Uang Masuk"].sum(),
-        "Selisih": df["Invoice"].sum() - df["Uang Masuk"].sum()
-    }
-    df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
-
-    st.success("✅ Rekonsiliasi selesai! Tabel hasil berhasil dibuat.")
-
-    formatted_df = df.copy()
-    for col in ["Nominal Tiket Terjual", "Invoice", "Uang Masuk", "Selisih"]:
-        formatted_df[col] = formatted_df[col].apply(lambda x: f"Rp {x:,.0f}" if isinstance(x, (int, float)) and x != 0 else "")
-
-    st.success("✅ Rekonsiliasi selesai! Tabel hasil berhasil dibuat.")
-    df_pelabuhan = formatted_df[formatted_df["Pelabuhan Asal"] != "TOTAL"].drop(columns=["Uang Masuk", "Invoice", "Selisih"])
-df_pelabuhan["Naik Turun Golongan"] = ""
-    df_total = invoice_df[invoice_df['STATUS'].str.lower() == 'dibayar'][['TANGGAL INVOICE', 'HARGA']].copy()
-    df_total = df_total.rename(columns={
-        'TANGGAL INVOICE': 'Tanggal Transaksi',
-        'HARGA': 'Invoice'
-    })
+    df_total = filtered_invoice[['TANGGAL INVOICE', 'HARGA']].copy()
+    df_total = df_total.rename(columns={'TANGGAL INVOICE': 'Tanggal Transaksi', 'HARGA': 'Invoice'})
     df_total['Tanggal Transaksi'] = pd.to_datetime(df_total['Tanggal Transaksi'], errors='coerce')
     df_total = df_total.sort_values('Tanggal Transaksi')
     df_total['Tanggal Transaksi'] = df_total['Tanggal Transaksi'].dt.strftime('%d-%m-%y')
     df_total['Uang Masuk'] = ''
     df_total['Selisih'] = ''
-    df_total = df_total[['Tanggal Transaksi', 'Invoice', 'Uang Masuk', 'Selisih']]
 
-    # Filter remark MIDI dan konversi tanggal transaksi
+    rekening_df = load_excel(uploaded_rekening)
+    rekening_detail_df = extract_total_rekening(rekening_df)
     rekening_detail_df = rekening_detail_df[rekening_detail_df['Remark'].str.contains("MIDI UTAMA", case=False, na=False)]
     rekening_detail_df['Tanggal Transaksi'] = pd.to_datetime(rekening_detail_df['Tanggal Transaksi'], errors='coerce').dt.strftime('%d-%m-%y')
 
-    # Hitung uang masuk dan selisih per tanggal transaksi invoice
     df_total['Uang Masuk'] = df_total['Tanggal Transaksi'].map(
         lambda tgl: rekening_detail_df[rekening_detail_df['Tanggal Transaksi'] == tgl]['Credit'].sum()
     )
     df_total['Selisih'] = df_total['Invoice'] - df_total['Uang Masuk']
 
-    
+    df_total_total = pd.DataFrame({
+        'Tanggal Transaksi': ['TOTAL'],
+        'Invoice': [df_total['Invoice'].sum()],
+        'Uang Masuk': [df_total['Uang Masuk'].sum()],
+        'Selisih': [df_total['Selisih'].sum()]
+    })
+
+    df_pelabuhan = pd.DataFrame({
+        'No': list(range(1, len(b2b_list) + 1)),
+        'Tanggal Transaksi': [df_total['Tanggal Transaksi'].iloc[0]] * len(b2b_list),
+        'Pelabuhan Asal': [b['Pelabuhan'] for b in b2b_list],
+        'Nominal Tiket Terjual': [b['Pendapatan'] for b in b2b_list],
+        'Naik Turun Golongan': [''] * len(b2b_list)
+    })
+
+    st.success("✅ Rekonsiliasi selesai! Tabel hasil berhasil dibuat.")
 
     st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
     st.dataframe(df_pelabuhan, use_container_width=True)
 
     st.subheader("📄 Tabel Rekapitulasi Total Keseluruhan")
-    df_total_row = df_total.copy()
-    df_total_row['Invoice'] = pd.to_numeric(df_total_row['Invoice'], errors='coerce')
-    df_total_row['Uang Masuk'] = pd.to_numeric(df_total_row['Uang Masuk'], errors='coerce')
-    df_total_row['Selisih'] = pd.to_numeric(df_total_row['Selisih'], errors='coerce')
-    df_total_total = pd.DataFrame({
-        'Tanggal Transaksi': ['TOTAL'],
-        'Invoice': [df_total_row['Invoice'].sum()],
-        'Uang Masuk': [df_total_row['Uang Masuk'].sum()],
-        'Selisih': [df_total_row['Selisih'].sum()]
-    })
     st.dataframe(pd.concat([df_total, df_total_total], ignore_index=True), use_container_width=True)
 
-    output_excel = to_excel(df)
+    output_excel = to_excel(df_total)
     st.download_button(
         label="📥 Download Rekapitulasi",
         data=output_excel,
@@ -209,8 +140,5 @@ df_pelabuhan["Naik Turun Golongan"] = ""
 
         st.markdown("### ✅ Tiket terdeteksi")
         st.write([file.name for file in uploaded_tiket_files])
-
-    output_excel = to_excel(df)
-    
 else:
     st.info("Silakan upload semua file yang dibutuhkan untuk menampilkan tabel hasil rekonsiliasi.")
