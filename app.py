@@ -113,6 +113,7 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
 
     rekening_df = load_excel(uploaded_rekening)
     rekening_detail_df = extract_total_rekening(rekening_df)
+    rekening_detail_df = rekening_detail_df[rekening_detail_df['Remark'].str.contains("MIDI UTAMA INDONESIA", case=False, na=False)]
     total_rekening_midi = rekening_detail_df['Credit'].sum()
 
     pelabuhan_list = ["Merak", "Bakauheni", "Ketapang", "Gilimanuk", "Ciwandan", "Panjang"]
