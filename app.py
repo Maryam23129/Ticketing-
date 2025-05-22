@@ -170,7 +170,6 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     df_total['Uang Masuk'] = ''
     df_total['Selisih'] = ''
     df_total = df_total[['Tanggal Transaksi', 'Invoice', 'Uang Masuk', 'Selisih']]
-    .max().strftime('%d-%m-%Y')
 
     st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
     st.dataframe(df_pelabuhan, use_container_width=True)
