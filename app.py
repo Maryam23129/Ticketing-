@@ -179,11 +179,7 @@ if uploaded_tiket_files and uploaded_invoice and uploaded_summary and uploaded_r
     
 
     st.subheader("📄 Tabel Rekapitulasi Rekonsiliasi Per Pelabuhan")
-    df_pelabuhan_total = pd.DataFrame(df_pelabuhan.select_dtypes(include=['number']).sum()).T
-    df_pelabuhan_total.insert(0, 'No', '')
-    df_pelabuhan_total.insert(1, 'Tanggal Transaksi', '')
-    df_pelabuhan_total.insert(2, 'Pelabuhan Asal', 'TOTAL')
-    st.dataframe(pd.concat([df_pelabuhan, df_pelabuhan_total], ignore_index=True), use_container_width=True)
+    st.dataframe(df_pelabuhan, use_container_width=True)
 
     st.subheader("📄 Tabel Rekapitulasi Total Keseluruhan")
     df_total_row = df_total.copy()
